@@ -1,32 +1,31 @@
 #![allow(unused)]
 
-mod constants;
+mod errors;
+
 mod arg_parser;
+
+mod constants;
+
 mod instructions;
+mod memory;
 mod registers;
 
-use std::{collections::HashMap, fs::File};
 use clap::Parser;
+use std::{collections::HashMap, fs::File};
 
-use constants::MEMORY_WORDS_SIZE;
-use registers::Register;
 use arg_parser::Args;
+use constants::MEMORY_WORDS_SIZE;
+use memory::Memory;
+use registers::Register;
 
 fn main() {
     let args = Args::new();
 
-    let memory: [i16; MEMORY_WORDS_SIZE] = load_program_to_memory(args.get_input_file());
+    let mut memory: Memory = Memory::new();
+    memory.load_program_to_memory(args.get_input_file());
+
     let registers: HashMap<Register, i16> = Register::new();
-    
 }
 
-fn load_program_to_memory(mut file: String) -> [i16; MEMORY_WORDS_SIZE] {
-    let mut memory: [i16; MEMORY_WORDS_SIZE] = [0; MEMORY_WORDS_SIZE];
-
-    for (i, line) in file.lines().enumerate() {
-    }
-
-
-    // memory
-    todo!()
-}
+#[cfg(test)]
+mod test {}

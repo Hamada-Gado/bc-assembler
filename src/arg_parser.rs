@@ -19,6 +19,7 @@ impl Args {
     }
 
     pub fn get_input_file(&self) -> String {
+        // already checked if file exists in new()
         fs::read_to_string(&self.input_file).unwrap()
     }
 }
