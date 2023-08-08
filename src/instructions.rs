@@ -1,6 +1,6 @@
 use strum_macros::EnumString;
 
-#[derive(EnumString)]
+#[derive(EnumString, Debug)]
 pub enum Symbol {
     // Memory reference
     AND,
@@ -108,8 +108,8 @@ impl Symbol {
             Symbol::SKO => "F100",
             Symbol::ION => "F080",
             Symbol::IOF => "F040",
-            Symbol::HEX => "F020",
-            Symbol::DEC => "F010",
+            Symbol::HEX => "",
+            Symbol::DEC => "",
         }
     }
 

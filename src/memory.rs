@@ -31,11 +31,21 @@ impl Memory {
                 continue;
             }
 
+            let line = line.trim();
+
             if line.trim().starts_with("ORG") {
-                let (_, address_str) = line.split_once("ORG ").expect(
-                    assembling_error(line_number, line, "ORG must be followed by an address")
-                        .as_str(),
-                );
+                let line = match line.split_once("//") {
+                    Some((line, _)) => line,
+                    None => line,
+                };
+
+                let address_str = line
+                    .split_once("ORG ")
+                    .expect(
+                        assembling_error(line_number, line, "ORG must be followed by an address")
+                            .as_str(),
+                    )
+                    .1;
 
                 address = u16::from_str_radix(address_str.trim(), 16).expect(
                     assembling_error(
@@ -67,9 +77,10 @@ impl Memory {
             if variable != "" {
                 self.variables.insert(
                     variable.to_string(),
-                    base16::encode_upper(&line_number.to_be_bytes())
-                        .trim_matches('0')
-                        .to_string(),
+                    format!(
+                        "{:0>3}",
+                        base16::encode_upper(&address.to_be_bytes()).trim_matches('0')
+                    ),
                 );
             }
 
@@ -77,7 +88,7 @@ impl Memory {
                 Ok(parsed) => parsed,
                 Err(error) => panic!("{}", assembling_error(line_number, line, error)),
             };
-
+            dbg!(&word);
             self.ram[address as usize] = u16::from_str_radix(word.as_str(), 16).unwrap();
 
             address += 1;
@@ -108,7 +119,6 @@ fn split_line(line: &str) -> (&str, &str) {
     split
 }
 
-//? should I return the binary representation of the instruction or the instruction itself?
 fn parse_instruction<'a>(
     instruction: &str,
     variables: &HashMap<String, String>,
@@ -123,14 +133,12 @@ fn parse_instruction<'a>(
         None => return Err("Instruction must have a symbol"),
     };
 
-    let is_memory_reference = symbol.is_memory_reference();
-
     let mut base = 16;
     if let Symbol::DEC = symbol {
         base = 10;
     }
 
-    if !is_memory_reference {
+    if !symbol.is_memory_reference() && !symbol.is_number_representation() {
         if instruction.next() != None {
             return Err("Non Memory Reference Instructions must have only a symbol");
         }
@@ -248,11 +256,11 @@ mod tests {
 
     #[test]
     fn parse_instruction1() {
-        let instruction = "LDA 000";
+        let instruction = "STA VAR";
         let variables = set_up_variables();
         let word = super::parse_instruction(instruction, &variables).unwrap();
         println!("{}", word);
-        assert!(word == "2000")
+        assert!(word == "300A")
     }
 
     #[test]
@@ -276,19 +284,20 @@ mod tests {
     #[test]
     fn test_memory() {
         let file = "
-            // Start the program at memory location 64(hex) = 100(dec)
-                    ORG 064  
-            LOP,    LDA 000 // Load the first number into the accumulator
-                    LDA 001 // Load the second number into the accumulator
-                    ADD 002 // Add the second number to the first
-                    STA LOP // Store the result in the third memory location
-                    HLT     // Halt the program";
+                    ORG 064     // Start the program at memory location 64(hex) = 100(dec)
+            X,      DEC 000     // Store the result here
+            LOP,    LDA 000     // Load the first number into the accumulator
+                    LDA 001     // Load the second number into the accumulator
+                    ADD 002     // Add the second number to the first
+                    STA X I     // Store the result indirectly
+                    HLT         // Halt the program";
 
         let mut memory = Memory::new();
         memory.load_program_to_memory(file.to_string());
         for i in 100..110 {
-            println!("{:?}", memory.ram[i]);
             println!("{:?}", base16::encode_upper(&memory.ram[i].to_be_bytes()));
         }
+
+        assert!(false);
     }
 }
